@@ -19,13 +19,20 @@ const (
 	ReadStateFileName = "read_state.json"
 )
 
+type SortBy int
+
+const (
+	SortByName SortBy = iota
+	SortByModTime
+)
+
 // 定义选项结构体
 type LogReaderOptions struct {
 	BufferSize    int
 	MaxBufferSize int
-	StateSaveFreq int    // 状态保存频率(条)
-	MaxOpenFiles  int    // 最大打开文件数
-	SortBy        string // 新增：支持 "modtime", "name"
+	StateSaveFreq int // 状态保存频率(条)
+	MaxOpenFiles  int // 最大打开文件数
+	SortBy        SortBy
 }
 
 // 选项函数
@@ -37,7 +44,7 @@ func WithMaxOpenFiles(n int) func(*LogReaderOptions) {
 	return func(o *LogReaderOptions) { o.MaxOpenFiles = n }
 }
 
-func WithSortBy(field string) func(*LogReaderOptions) {
+func WithSortBy(field SortBy) func(*LogReaderOptions) {
 	return func(o *LogReaderOptions) { o.SortBy = field }
 }
 
@@ -63,6 +70,7 @@ func NewLogReader(dir string, opts ...func(*LogReaderOptions)) (*LogReader, erro
 		MaxBufferSize: 10,
 		StateSaveFreq: 1000,
 		MaxOpenFiles:  1024,
+		SortBy:        SortByModTime,
 	}
 
 	// 应用用户提供的选项
@@ -237,9 +245,16 @@ func (r *LogReader) getSortedLogFiles() ([]FileInfo, error) {
 		return nil, err
 	}
 
-	// 按修改时间排序
+	// 按配置的SortBy字段排序
 	sort.Slice(files, func(i, j int) bool {
-		return files[i].Info.ModTime().Before(files[j].Info.ModTime())
+		switch r.options.SortBy {
+		case SortByName:
+			return files[i].Info.Name() < files[j].Info.Name()
+		case SortByModTime:
+			return files[i].Info.ModTime().Before(files[j].Info.ModTime())
+		default:
+			return files[i].Info.ModTime().Before(files[j].Info.ModTime())
+		}
 	})
 	return files, nil
 }

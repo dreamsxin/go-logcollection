@@ -143,18 +143,29 @@ func (r *LogReader) ReadAllOld(maxLine int64, callback func(*LogEntry)) error {
 
 func splitProtobuf(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if len(data) < 4 { // 假设使用4字节长度前缀
-		slog.Error("splitProtobuf", "msg", "数据长度不足")
+		if atEOF { // 数据不完整且已到结尾
+			slog.Error("splitProtobuf", "msg", "数据不完整且已到结尾", "len", len(data))
+			return 0, nil, io.ErrUnexpectedEOF
+		}
 		return 0, nil, nil
 	}
 	length := binary.BigEndian.Uint32(data[:4])
 	if uint32(len(data)) < 4+length {
-		slog.Error("splitProtobuf", "msg", "数据长度错误")
+		if atEOF { // 数据不完整且已到结尾
+			slog.Error("splitProtobuf", "msg", "数据不完整且已到结尾", "len", len(data))
+			return 0, nil, io.ErrUnexpectedEOF
+		}
 		return 0, nil, nil
 	}
 	return 4 + int(length), data[4 : 4+length], nil
 }
 
-func (r *LogReader) ReadAll(maxLine int64, callback func(*LogEntry)) error {
+func (r *LogReader) ReadAll(callback func(*LogEntry)) error {
+
+	return r.Read(0, callback)
+}
+
+func (r *LogReader) Read(maxLine int64, callback func(*LogEntry)) error {
 
 	lastfile := ""
 	offset := int64(0)
@@ -166,10 +177,7 @@ func (r *LogReader) ReadAll(maxLine int64, callback func(*LogEntry)) error {
 		// 加载上次读取位置
 		lastfile, offset, err = r.LoadState()
 		if err != nil {
-			if err != os.ErrNotExist {
-				slog.Error("ReadAll", "msg", "加载上次读取位置失败", "err", err)
-				return err
-			}
+			slog.Error("ReadAll", "msg", "加载上次读取位置失败", "err", err)
 		}
 	}
 	slog.Debug("ReadAll", "msg", "加载上次读取位置", "lastfile", lastfile, "offset", offset)
@@ -198,6 +206,9 @@ func (r *LogReader) ReadAll(maxLine int64, callback func(*LogEntry)) error {
 
 		// 按行读取
 		scanner := bufio.NewScanner(file)
+		buf := make([]byte, 0, 1024*1024) // 1MB初始缓冲区
+		scanner.Buffer(buf, 10*1024*1024) // 最大10MB
+
 		scanner.Split(splitProtobuf)
 		for scanner.Scan() {
 			msg := scanner.Bytes()

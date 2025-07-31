@@ -20,7 +20,7 @@ type LogWriter struct {
 	currentSize int64
 	maxSize     int64
 	mu          sync.Mutex
-	buffer      chan *LogEntry
+	buffer      chan proto.Message
 	stopChan    chan struct{}
 	wg          sync.WaitGroup
 	closed      bool
@@ -38,7 +38,7 @@ func NewLogWriter(path string, maxSizeMB int, bufferSize int) *LogWriter {
 		path:     path,
 		file:     file,
 		maxSize:  int64(maxSizeMB) * 1024 * 1024,
-		buffer:   make(chan *LogEntry, bufferSize),
+		buffer:   make(chan proto.Message, bufferSize),
 		stopChan: make(chan struct{}),
 	}
 
@@ -47,7 +47,7 @@ func NewLogWriter(path string, maxSizeMB int, bufferSize int) *LogWriter {
 	return w
 }
 
-func (w *LogWriter) Write(entry *LogEntry) error {
+func (w *LogWriter) Write(entry proto.Message) error {
 	if w.closed {
 		return fmt.Errorf("writer is closed")
 	}

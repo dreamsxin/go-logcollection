@@ -24,7 +24,7 @@ func TestLogCollectionWriter(t *testing.T) {
 
 func TestLogCollectionReader(t *testing.T) {
 	// 日志读取
-	reader := NewLogReader("./logs") // 100MB滚动
+	reader := NewLogReader("./logs")
 
 	// 定义日志处理函数
 	processLog := func(log *LogEntry) {
@@ -32,5 +32,5 @@ func TestLogCollectionReader(t *testing.T) {
 	}
 
 	// 启动日志跟踪
-	reader.ReadAll(100, processLog)
+	reader.Read(100, processLog)
 }

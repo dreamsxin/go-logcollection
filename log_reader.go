@@ -91,7 +91,7 @@ func (r *LogReader) ReadAllOld(maxLine int64, callback func(*LogEntry)) error {
 			}
 		}
 	}
-	slog.Info("ReadAll", "msg", "加载上次读取位置", "lastfile", lastfile, "offset", offset)
+	slog.Debug("ReadAll", "msg", "加载上次读取位置", "lastfile", lastfile, "offset", offset)
 	linenum := int64(0)
 	filepath.Walk(r.rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -108,11 +108,11 @@ func (r *LogReader) ReadAllOld(maxLine int64, callback func(*LogEntry)) error {
 		defer file.Close()
 
 		// 加载上次读取位置
-		slog.Info("ReadAll", "msg", "遍历目录", "path", path, "lastfile", lastfile, "offset", offset)
+		slog.Debug("ReadAll", "msg", "遍历目录", "path", path, "lastfile", lastfile, "offset", offset)
 		if path == lastfile {
 			if offset > 0 {
 				file.Seek(offset, io.SeekStart)
-				slog.Info("ReadAll", "Seek", offset)
+				slog.Debug("ReadAll", "Seek", offset)
 			}
 		}
 
@@ -172,7 +172,7 @@ func (r *LogReader) ReadAll(maxLine int64, callback func(*LogEntry)) error {
 			}
 		}
 	}
-	slog.Info("ReadAll", "msg", "加载上次读取位置", "lastfile", lastfile, "offset", offset)
+	slog.Debug("ReadAll", "msg", "加载上次读取位置", "lastfile", lastfile, "offset", offset)
 	linenum := int64(0)
 	filepath.Walk(r.rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -189,11 +189,10 @@ func (r *LogReader) ReadAll(maxLine int64, callback func(*LogEntry)) error {
 		defer file.Close()
 
 		// 加载上次读取位置
-		slog.Info("ReadAll", "msg", "遍历目录", "path", path, "lastfile", lastfile, "offset", offset)
+		slog.Debug("ReadAll", "msg", "遍历目录", "path", path, "lastfile", lastfile, "offset", offset)
 		if path == lastfile {
 			if offset > 0 {
 				file.Seek(offset, io.SeekStart)
-				slog.Info("ReadAll", "Seek", offset)
 			}
 		}
 
@@ -203,7 +202,6 @@ func (r *LogReader) ReadAll(maxLine int64, callback func(*LogEntry)) error {
 		for scanner.Scan() {
 			msg := scanner.Bytes()
 
-			slog.Info("ReadAll", "Scan", offset)
 			r.processChunk(msg, callback)
 
 			// 保存当前读取位置

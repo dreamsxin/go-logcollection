@@ -10,8 +10,10 @@ import (
 
 func main() {
 	slog.SetLogLoggerLevel(slog.LevelDebug)
-	reader := logcollection.NewLogReader("../producer/logs")
-
+	reader, err := logcollection.NewLogReader("../producer/logs")
+	if err != nil {
+		panic(err)
+	}
 	// 日志生产示例
 	startTime := time.Now().UnixMilli()
 

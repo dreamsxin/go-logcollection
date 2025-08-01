@@ -46,7 +46,7 @@ func WithWriterBufferSize(bufferSize int) func(*LogWriterOptions) {
 type LogWriter struct {
 	path        string
 	file        *os.File
-	writer      *bufio.Writer // 新增缓冲写入器
+	writer      *bufio.Writer
 	currentSize int64
 	maxSize     int64
 	mu          sync.Mutex
@@ -54,6 +54,7 @@ type LogWriter struct {
 	stopChan    chan struct{}
 	wg          sync.WaitGroup
 	closed      bool
+	options     LogWriterOptions
 }
 
 func NewLogWriter(path string, opts ...func(*LogWriterOptions)) (*LogWriter, error) {
@@ -100,6 +101,7 @@ func NewLogWriter(path string, opts ...func(*LogWriterOptions)) (*LogWriter, err
 		maxSize:     int64(options.MaxSizeMB) * 1024 * 1024,
 		buffer:      make(chan proto.Message, options.BufferSize),
 		stopChan:    make(chan struct{}),
+		options:     options,
 	}
 
 	w.wg.Add(1)
@@ -207,14 +209,17 @@ func (w *LogWriter) flush(data []byte) {
 	if len(data) == 0 {
 		return
 	}
+	// 先计算是否需要旋转文件，减少锁的持有时间
+	needRotate := false
 	w.mu.Lock()
-	defer w.mu.Unlock() // 确保整个写入过程都持有锁
-
-	// 仅在必要时持有锁
+	//oldSize := w.currentSize
 	w.currentSize += int64(len(data))
-	needRotate := w.currentSize >= w.maxSize
+	if w.currentSize >= w.maxSize {
+		needRotate = true
+	}
+	w.mu.Unlock()
 
-	// 在锁保护下执行写入
+	// 执行写入操作
 	if _, err := w.writer.Write(data); err != nil {
 		slog.Error("Failed to write log data", "error", err)
 		return
@@ -224,28 +229,38 @@ func (w *LogWriter) flush(data []byte) {
 		return
 	}
 
+	// 若需要旋转文件，则进行文件旋转
 	if needRotate {
 		w.rotateFile()
 	}
 }
 
+// rotateFile函数用于切换日志文件
 func (w *LogWriter) rotateFile() {
+	// 刷新缓冲区
 	if err := w.writer.Flush(); err != nil {
 		slog.Error("Failed to flush before rotate", "error", err)
 	}
+	// 关闭当前日志文件
 	if err := w.file.Close(); err != nil {
 		slog.Error("Failed to close file before rotate", "error", err)
 	}
 
+	// 构造新的文件路径，格式为：原路径.当前时间
 	newPath := fmt.Sprintf("%s.%s", w.path, time.Now().Format("20060102-150405"))
-	os.Rename(w.path, newPath)
+	// 重命名当前日志文件为新的文件路径
+	if err := os.Rename(w.path, newPath); err != nil {
+		slog.Error("Failed to rename log file", "error", err)
+		return
+	}
 
+	// 创建新的日志文件
 	var err error
 	w.file, err = os.Create(w.path)
 	if err != nil {
 		slog.Error("Failed to create new log file", "error", err)
 		panic(err) // 无法创建新文件，严重错误
 	}
-	w.writer = bufio.NewWriterSize(w.file, 32*1024) // 重新创建缓冲写入器
+	w.writer = bufio.NewWriterSize(w.file, w.options.WriterBufferSize) // 重新创建缓冲写入器
 	w.currentSize = 0
 }

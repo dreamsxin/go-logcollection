@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,6 +21,7 @@ type LogWriterOptions struct {
 	MaxSizeMB        int // 日志文件最大大小(MB)
 	BufferSize       int // 通道缓冲区大小
 	WriterBufferSize int // 写入器缓冲区大小(字节)
+	MaxAgeDays       int // 日志文件最大保留天数
 }
 
 // WithMaxSizeMB 设置日志文件最大大小选项
@@ -43,6 +45,13 @@ func WithWriterBufferSize(bufferSize int) func(*LogWriterOptions) {
 	}
 }
 
+// WithMaxAgeDays 设置日志文件最大保留天数选项
+func WithMaxAgeDays(maxAgeDays int) func(*LogWriterOptions) {
+	return func(o *LogWriterOptions) {
+		o.MaxAgeDays = maxAgeDays
+	}
+}
+
 type LogWriter struct {
 	path        string
 	file        *os.File
@@ -63,6 +72,7 @@ func NewLogWriter(path string, opts ...func(*LogWriterOptions)) (*LogWriter, err
 		MaxSizeMB:        10,        // 默认10MB
 		BufferSize:       1000,      // 默认通道缓冲区大小
 		WriterBufferSize: 32 * 1024, // 默认32KB写入缓冲区
+		MaxAgeDays:       0,         // 默认不限制保留天数
 	}
 
 	// 应用用户提供的选项
@@ -263,4 +273,59 @@ func (w *LogWriter) rotateFile() {
 	}
 	w.writer = bufio.NewWriterSize(w.file, w.options.WriterBufferSize) // 重新创建缓冲写入器
 	w.currentSize = 0
+
+	if w.options.MaxAgeDays <= 0 {
+		// 轮转后清理旧文件
+		w.cleanupOldFiles()
+	}
+}
+
+// cleanupOldFiles 根据MaxAgeDays删除过期日志文件
+func (w *LogWriter) cleanupOldFiles() {
+	if w.options.MaxAgeDays <= 0 {
+		return // 不限制保留天数，无需清理
+	}
+
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	dir := filepath.Dir(w.path)
+	baseName := filepath.Base(w.path)
+	cutoffTime := time.Now().AddDate(0, 0, -w.options.MaxAgeDays)
+
+	// 读取日志目录
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		slog.Error("Failed to read log directory", "error", err)
+		return
+	}
+
+	for _, file := range files {
+		if file.IsDir() || !strings.HasPrefix(file.Name(), baseName+".") {
+			continue // 跳过目录和非日志文件
+		}
+
+		// 解析时间戳
+		timestampStr := strings.TrimPrefix(file.Name(), baseName+".")
+		if _, err := time.Parse("20060102-150405", timestampStr); err != nil {
+			continue // 跳过不符合命名规范的文件
+		}
+
+		// 检查文件修改时间
+		fileInfo, err := file.Info()
+		if err != nil {
+			slog.Error("Failed to get file info", "file", file.Name(), "error", err)
+			continue
+		}
+
+		// 删除过期文件
+		if fileInfo.ModTime().Before(cutoffTime) {
+			filePath := filepath.Join(dir, file.Name())
+			if err := os.Remove(filePath); err != nil {
+				slog.Error("Failed to remove old log file", "file", filePath, "error", err)
+			} else {
+				slog.Info("Removed old log file", "file", filePath)
+			}
+		}
+	}
 }

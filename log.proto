@@ -10,3 +10,22 @@ message LogEntry {
   string message = 4;
   map<string, string> tags = 5;
 }
+
+// gRPC服务定义
+service LogService {
+  rpc SubmitLog(LogEntry) returns (SubmitLogResponse);
+  rpc SubmitLogs(stream LogEntry) returns (SubmitLogsResponse);
+}
+
+message SubmitLogResponse {
+  bool success = 1;
+  string message = 2;
+  int64 timestamp = 3;
+}
+
+message SubmitLogsResponse {
+  bool success = 1;
+  string message = 2;
+  int64 count = 3;
+  int64 timestamp = 4;
+}

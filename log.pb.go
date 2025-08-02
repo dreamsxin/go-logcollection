@@ -97,6 +97,134 @@ func (x *LogEntry) GetTags() map[string]string {
 	return nil
 }
 
+type SubmitLogResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Timestamp     int64                  `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubmitLogResponse) Reset() {
+	*x = SubmitLogResponse{}
+	mi := &file_log_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubmitLogResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubmitLogResponse) ProtoMessage() {}
+
+func (x *SubmitLogResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_log_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubmitLogResponse.ProtoReflect.Descriptor instead.
+func (*SubmitLogResponse) Descriptor() ([]byte, []int) {
+	return file_log_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *SubmitLogResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *SubmitLogResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *SubmitLogResponse) GetTimestamp() int64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
+type SubmitLogsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Count         int64                  `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
+	Timestamp     int64                  `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubmitLogsResponse) Reset() {
+	*x = SubmitLogsResponse{}
+	mi := &file_log_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubmitLogsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubmitLogsResponse) ProtoMessage() {}
+
+func (x *SubmitLogsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_log_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubmitLogsResponse.ProtoReflect.Descriptor instead.
+func (*SubmitLogsResponse) Descriptor() ([]byte, []int) {
+	return file_log_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SubmitLogsResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *SubmitLogsResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *SubmitLogsResponse) GetCount() int64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+func (x *SubmitLogsResponse) GetTimestamp() int64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
 var File_log_proto protoreflect.FileDescriptor
 
 const file_log_proto_rawDesc = "" +
@@ -110,7 +238,21 @@ const file_log_proto_rawDesc = "" +
 	"\x04tags\x18\x05 \x03(\v2!.logcollection.LogEntry.TagsEntryR\x04tags\x1a7\n" +
 	"\tTagsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x11Z\x0f.;logcollectionb\x06proto3"
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"e\n" +
+	"\x11SubmitLogResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1c\n" +
+	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\"|\n" +
+	"\x12SubmitLogsResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x14\n" +
+	"\x05count\x18\x03 \x01(\x03R\x05count\x12\x1c\n" +
+	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp2\xa0\x01\n" +
+	"\n" +
+	"LogService\x12F\n" +
+	"\tSubmitLog\x12\x17.logcollection.LogEntry\x1a .logcollection.SubmitLogResponse\x12J\n" +
+	"\n" +
+	"SubmitLogs\x12\x17.logcollection.LogEntry\x1a!.logcollection.SubmitLogsResponse(\x01B\x11Z\x0f.;logcollectionb\x06proto3"
 
 var (
 	file_log_proto_rawDescOnce sync.Once
@@ -124,15 +266,21 @@ func file_log_proto_rawDescGZIP() []byte {
 	return file_log_proto_rawDescData
 }
 
-var file_log_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_log_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_log_proto_goTypes = []any{
-	(*LogEntry)(nil), // 0: logcollection.LogEntry
-	nil,              // 1: logcollection.LogEntry.TagsEntry
+	(*LogEntry)(nil),           // 0: logcollection.LogEntry
+	(*SubmitLogResponse)(nil),  // 1: logcollection.SubmitLogResponse
+	(*SubmitLogsResponse)(nil), // 2: logcollection.SubmitLogsResponse
+	nil,                        // 3: logcollection.LogEntry.TagsEntry
 }
 var file_log_proto_depIdxs = []int32{
-	1, // 0: logcollection.LogEntry.tags:type_name -> logcollection.LogEntry.TagsEntry
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
+	3, // 0: logcollection.LogEntry.tags:type_name -> logcollection.LogEntry.TagsEntry
+	0, // 1: logcollection.LogService.SubmitLog:input_type -> logcollection.LogEntry
+	0, // 2: logcollection.LogService.SubmitLogs:input_type -> logcollection.LogEntry
+	1, // 3: logcollection.LogService.SubmitLog:output_type -> logcollection.SubmitLogResponse
+	2, // 4: logcollection.LogService.SubmitLogs:output_type -> logcollection.SubmitLogsResponse
+	3, // [3:5] is the sub-list for method output_type
+	1, // [1:3] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -149,9 +297,9 @@ func file_log_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_log_proto_rawDesc), len(file_log_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
-			NumServices:   0,
+			NumServices:   1,
 		},
 		GoTypes:           file_log_proto_goTypes,
 		DependencyIndexes: file_log_proto_depIdxs,

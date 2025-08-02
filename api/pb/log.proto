@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-package logcollection;
-option go_package = ".;logcollection";
+package pb;
+option go_package = ".;pb";
 
 message LogEntry {
   int64 timestamp = 1;

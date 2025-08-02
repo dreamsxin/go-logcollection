@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/dreamsxin/go-logcollection"
+	"github.com/dreamsxin/go-logcollection/api/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -16,13 +16,13 @@ func main() {
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 
 	// 连接gRPC服务器
-	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
 	defer conn.Close()
 
-	client := logcollection.NewLogServiceClient(conn)
+	client := pb.NewLogServiceClient(conn)
 
 	// 单个日志提交示例
 	singleLogExample(client)
@@ -31,8 +31,8 @@ func main() {
 	streamLogExample(client)
 }
 
-func singleLogExample(client logcollection.LogServiceClient) {
-	entry := &logcollection.LogEntry{
+func singleLogExample(client pb.LogServiceClient) {
+	entry := &pb.LogEntry{
 		Timestamp: time.Now().Unix(),
 		Level:     "INFO",
 		Service:   "grpc-client",
@@ -54,7 +54,7 @@ func singleLogExample(client logcollection.LogServiceClient) {
 	log.Printf("Single log response: %+v", response)
 }
 
-func streamLogExample(client logcollection.LogServiceClient) {
+func streamLogExample(client pb.LogServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -65,7 +65,7 @@ func streamLogExample(client logcollection.LogServiceClient) {
 
 	// 发送多个日志条目
 	for i := 0; i < 5; i++ {
-		entry := &logcollection.LogEntry{
+		entry := &pb.LogEntry{
 			Timestamp: time.Now().Unix(),
 			Level:     "DEBUG",
 			Service:   "grpc-client",

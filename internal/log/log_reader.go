@@ -1,4 +1,4 @@
-package logcollection
+package log
 
 import (
 	"bufio"
@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"sort"
 	"sync"
+
+	"github.com/dreamsxin/go-logcollection/api/pb"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -215,7 +217,7 @@ func splitProtobuf(data []byte, atEOF bool) (advance int, token []byte, err erro
 	return 4 + int(length), data[4 : 4+length], nil
 }
 
-func (r *LogReader) ReadAll(callback func(*LogEntry)) error {
+func (r *LogReader) ReadAll(callback func(*pb.LogEntry)) error {
 
 	return r.Read(0, callback)
 }
@@ -259,7 +261,7 @@ func (r *LogReader) getSortedLogFiles() ([]FileInfo, error) {
 	return files, nil
 }
 
-func (r *LogReader) Read(maxLine int64, callback func(*LogEntry)) error {
+func (r *LogReader) Read(maxLine int64, callback func(*pb.LogEntry)) error {
 
 	lastfile := ""
 	offset := int64(0)
@@ -340,14 +342,14 @@ func (r *LogReader) Read(maxLine int64, callback func(*LogEntry)) error {
 	return nil
 }
 
-func (r *LogReader) processChunk(data []byte, callback func(*LogEntry)) {
+func (r *LogReader) processChunk(data []byte, callback func(*pb.LogEntry)) {
 
 	if len(data) == 0 {
 		slog.Error("processChunk", "msg", "数据为空")
 		return
 	}
 
-	entry := &LogEntry{}
+	entry := &pb.LogEntry{}
 	if err := proto.Unmarshal(data, entry); err != nil {
 		slog.Error("processChunk", "msg", err)
 		return

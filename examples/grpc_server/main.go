@@ -23,13 +23,9 @@ func main() {
 	defer writer.Stop()
 
 	// 启动gRPC服务器（在后台goroutine中）
-	go func() {
-		if err := grpc.StartGRPCServer(":50051", writer); err != nil {
-			log.Fatalf("Failed to start gRPC server: %v", err)
-		}
-	}()
 	slog.Info("gRPC server started in background", "address", ":50051")
+	if err := grpc.StartGRPCServer(":50051", writer); err != nil {
+		log.Fatalf("Failed to start gRPC server: %v", err)
+	}
 
-	// 保持程序运行以继续提供gRPC服务
-	select {}
 }

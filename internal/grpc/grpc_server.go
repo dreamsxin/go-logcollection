@@ -6,7 +6,9 @@ import (
 	"io"
 	"log/slog"
 	"net"
-	"sync"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/dreamsxin/go-logcollection/api/pb"
@@ -39,7 +41,6 @@ type LogServer struct {
 	pb.UnimplementedLogServiceServer
 	logWriter *log.LogWriter
 	options   LogServerOptions
-	mu        sync.Mutex
 }
 
 // NewLogServer 创建新的日志gRPC服务器
@@ -69,9 +70,6 @@ func NewLogServer(logWriter *log.LogWriter, opts ...func(*LogServerOptions)) (*L
 
 // SubmitLog 处理单个日志条目提交
 func (s *LogServer) SubmitLog(ctx context.Context, entry *pb.LogEntry) (*pb.SubmitLogResponse, error) {
-	// 添加超时控制
-	ctx, cancel := context.WithTimeout(ctx, s.options.WriteTimeout)
-	defer cancel()
 
 	var err error
 	for i := 0; i < s.options.RetryCount; i++ {
@@ -151,10 +149,41 @@ func StartGRPCServer(addr string, logWriter *log.LogWriter, opts ...func(*LogSer
 	s := grpc.NewServer()
 	pb.RegisterLogServiceServer(s, server)
 
+	// 创建可取消的上下文
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// 启动信号监听协程
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+		select {
+		case <-sigChan:
+			slog.Info("Received shutdown signal, starting graceful stop")
+			// 取消上下文
+			cancel()
+			// 优雅关闭服务器
+			s.GracefulStop()
+		case <-ctx.Done():
+			return
+		}
+	}()
+
 	slog.Info("Starting gRPC server", "address", addr)
-	if err := s.Serve(lis); err != nil {
+
+	// 使用带上下文的Serve
+	go func() {
+		<-ctx.Done()
+		// 优雅关闭服务器
+		s.GracefulStop()
+	}()
+
+	if err := s.Serve(lis); err != nil && err != grpc.ErrServerStopped {
 		slog.Error("Failed to serve", "error", err)
 		return err
 	}
+
+	slog.Info("gRPC server stopped gracefully")
 	return nil
 }

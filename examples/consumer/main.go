@@ -5,12 +5,13 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/dreamsxin/go-logcollection"
+	"github.com/dreamsxin/go-logcollection/api/pb"
+	"github.com/dreamsxin/go-logcollection/pkg/log"
 )
 
 func main() {
 	slog.SetLogLoggerLevel(slog.LevelDebug)
-	reader, err := logcollection.NewLogReader("../producer/logs")
+	reader, err := log.NewLogReader("../producer/logs")
 	if err != nil {
 		panic(err)
 	}
@@ -18,7 +19,7 @@ func main() {
 	startTime := time.Now().UnixMilli()
 
 	// 定义日志处理函数
-	processLog := func(log *logcollection.LogEntry) {
+	processLog := func(log *pb.LogEntry) {
 		fmt.Printf("处理日志: %#v\n", log.String())
 	}
 

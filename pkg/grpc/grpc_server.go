@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/dreamsxin/go-logcollection/api/pb"
-	"github.com/dreamsxin/go-logcollection/internal/log"
+	"github.com/dreamsxin/go-logcollection/pkg/log"
 	"google.golang.org/grpc"
 )
 

@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"github.com/dreamsxin/go-logcollection/api/pb"
-	internallog "github.com/dreamsxin/go-logcollection/internal/log"
+	pkglog "github.com/dreamsxin/go-logcollection/pkg/log"
 )
 
 func main() {
 	slog.SetLogLoggerLevel(slog.LevelDebug)
-	writer, err := internallog.NewLogWriter("./logs/app.log",
-		internallog.WithMaxSizeMB(20),             // 设置最大日志大小为20MB
-		internallog.WithBufferSize(2000),          // 设置通道缓冲区大小为2000
-		internallog.WithWriterBufferSize(64*1024), // 设置写入缓冲区为64KB
+	writer, err := pkglog.NewLogWriter("./logs/app.log",
+		pkglog.WithMaxSizeMB(20),             // 设置最大日志大小为20MB
+		pkglog.WithBufferSize(2000),          // 设置通道缓冲区大小为2000
+		pkglog.WithWriterBufferSize(64*1024), // 设置写入缓冲区为64KB
 	)
 
 	if err != nil {

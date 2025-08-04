@@ -6,15 +6,15 @@ import (
 	"time"
 
 	"github.com/dreamsxin/go-logcollection/api/pb"
-	internallog "github.com/dreamsxin/go-logcollection/internal/log"
+	pkglog "github.com/dreamsxin/go-logcollection/pkg/log"
 )
 
 func TestLogCollectionWriter(t *testing.T) {
 	// 初始化组件
-	writer, err := internallog.NewLogWriter("./logs/app.log",
-		internallog.WithMaxSizeMB(20),             // 设置最大日志大小为20MB
-		internallog.WithBufferSize(2000),          // 设置通道缓冲区大小为2000
-		internallog.WithWriterBufferSize(64*1024), // 设置写入缓冲区为64KB
+	writer, err := pkglog.NewLogWriter("./logs/app.log",
+		pkglog.WithMaxSizeMB(20),             // 设置最大日志大小为20MB
+		pkglog.WithBufferSize(2000),          // 设置通道缓冲区大小为2000
+		pkglog.WithWriterBufferSize(64*1024), // 设置写入缓冲区为64KB
 	)
 
 	if err != nil {
@@ -35,7 +35,7 @@ func TestLogCollectionWriter(t *testing.T) {
 
 func TestLogCollectionReader(t *testing.T) {
 	// 日志读取
-	reader, err := internallog.NewLogReader("./logs")
+	reader, err := pkglog.NewLogReader("./logs")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,10 +50,10 @@ func TestLogCollectionReader(t *testing.T) {
 
 // 写入性能测试
 func BenchmarkLogCollectionWriter(b *testing.B) {
-	writer, err := internallog.NewLogWriter("./logs/app.log",
-		internallog.WithMaxSizeMB(100),            // 设置最大日志大小为20MB
-		internallog.WithBufferSize(2000),          // 设置通道缓冲区大小为2000
-		internallog.WithWriterBufferSize(64*1024), // 设置写入缓冲区为64KB
+	writer, err := pkglog.NewLogWriter("./logs/app.log",
+		pkglog.WithMaxSizeMB(100),            // 设置最大日志大小为20MB
+		pkglog.WithBufferSize(2000),          // 设置通道缓冲区大小为2000
+		pkglog.WithWriterBufferSize(64*1024), // 设置写入缓冲区为64KB
 	)
 	if err != nil {
 		b.Fatal(err)
@@ -72,7 +72,7 @@ func BenchmarkLogCollectionWriter(b *testing.B) {
 
 // 读取性能测试
 func BenchmarkLogCollectionReader(b *testing.B) {
-	reader, err := internallog.NewLogReader("./logs")
+	reader, err := pkglog.NewLogReader("./logs")
 	if err != nil {
 		b.Fatal(err)
 	}

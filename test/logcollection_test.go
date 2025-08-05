@@ -2,12 +2,18 @@ package logcollection
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/dreamsxin/go-logcollection/api/pb"
 	pkglog "github.com/dreamsxin/go-logcollection/pkg/log"
 )
+
+func init() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+}
 
 func TestLogCollectionWriter(t *testing.T) {
 	// 初始化组件
@@ -72,12 +78,16 @@ func BenchmarkLogCollectionWriter(b *testing.B) {
 
 // 读取性能测试
 func BenchmarkLogCollectionReader(b *testing.B) {
+	os.Remove("./logs/read_state.json")
 	reader, err := pkglog.NewLogReader("./logs")
 	if err != nil {
 		b.Fatal(err)
 	}
 	b.ResetTimer() // 重置计时器
+	num := 0
 	reader.Read(int64(b.N), func(log *pb.LogEntry) {
 		// 处理日志
+		num++
 	})
+	b.Logf("处理了 %d 条日志", num)
 }

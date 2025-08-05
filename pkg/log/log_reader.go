@@ -266,6 +266,7 @@ func (r *LogReader) Read(maxLine int64, callback func(*pb.LogEntry)) error {
 	lastfile := ""
 	offset := int64(0)
 
+	slog.Debug("Read", "maxLine", maxLine)
 	// 新增：获取并排序日志文件
 	files, err := r.getSortedLogFiles()
 	if err != nil {

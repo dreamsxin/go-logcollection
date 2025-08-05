@@ -1,8 +1,6 @@
 module github.com/dreamsxin/go-logcollection
 
-go 1.23.0
-
-toolchain go1.23.11
+go 1.24.5
 
 require (
 	google.golang.org/grpc v1.74.2

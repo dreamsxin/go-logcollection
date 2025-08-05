@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -58,7 +59,6 @@ type LogWriter struct {
 	writer      *bufio.Writer
 	currentSize int64
 	maxSize     int64
-	mu          sync.Mutex
 	buffer      chan proto.Message
 	stopChan    chan struct{}
 	wg          sync.WaitGroup
@@ -114,9 +114,30 @@ func NewLogWriter(path string, opts ...func(*LogWriterOptions)) (*LogWriter, err
 		options:     options,
 	}
 
+	// 如果设置了最大保留天数，启动定时清理协程
+	if options.MaxAgeDays > 0 {
+		w.wg.Add(1)
+		go w.startCleanupTimer()
+	}
+
 	w.wg.Add(1)
 	go w.batchWriter()
 	return w, nil
+}
+
+// 启动定时清理定时器
+func (w *LogWriter) startCleanupTimer() {
+	defer w.wg.Done()
+	cleanupTicker := time.NewTicker(24 * time.Hour) // 每隔24小时清理一次
+	defer cleanupTicker.Stop()
+	for {
+		select {
+		case <-cleanupTicker.C:
+			w.cleanupOldFiles()
+		case <-w.stopChan:
+			return
+		}
+	}
 }
 
 func (w *LogWriter) Write(entry proto.Message) error {
@@ -174,6 +195,7 @@ func (w *LogWriter) batchWriter() {
 
 	batch := make([]byte, 0, 16*1024)
 	ticker := time.NewTicker(500 * time.Millisecond) // 延长ticker间隔
+	defer ticker.Stop()                              // 添加ticker资源释放
 
 	for {
 		select {
@@ -219,15 +241,6 @@ func (w *LogWriter) flush(data []byte) {
 	if len(data) == 0 {
 		return
 	}
-	// 先计算是否需要旋转文件，减少锁的持有时间
-	needRotate := false
-	w.mu.Lock()
-	//oldSize := w.currentSize
-	w.currentSize += int64(len(data))
-	if w.currentSize >= w.maxSize {
-		needRotate = true
-	}
-	w.mu.Unlock()
 
 	// 执行写入操作
 	if _, err := w.writer.Write(data); err != nil {
@@ -238,6 +251,10 @@ func (w *LogWriter) flush(data []byte) {
 		slog.Error("Failed to flush log data", "error", err)
 		return
 	}
+
+	// 使用原子操作更新文件大小
+	newSize := atomic.AddInt64(&w.currentSize, int64(len(data)))
+	needRotate := newSize >= w.maxSize
 
 	// 若需要旋转文件，则进行文件旋转
 	if needRotate {
@@ -273,11 +290,6 @@ func (w *LogWriter) rotateFile() {
 	}
 	w.writer = bufio.NewWriterSize(w.file, w.options.WriterBufferSize) // 重新创建缓冲写入器
 	w.currentSize = 0
-
-	if w.options.MaxAgeDays <= 0 {
-		// 轮转后清理旧文件
-		w.cleanupOldFiles()
-	}
 }
 
 // cleanupOldFiles 根据MaxAgeDays删除过期日志文件
@@ -285,9 +297,6 @@ func (w *LogWriter) cleanupOldFiles() {
 	if w.options.MaxAgeDays <= 0 {
 		return // 不限制保留天数，无需清理
 	}
-
-	w.mu.Lock()
-	defer w.mu.Unlock()
 
 	dir := filepath.Dir(w.path)
 	baseName := filepath.Base(w.path)
